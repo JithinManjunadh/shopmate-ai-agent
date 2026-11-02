@@ -3,6 +3,10 @@ const { getCart } = require("./cartTools");
 function calculateBill(){
     const items = getCart();
 
+    if(items.length === 0){
+        return "Your cart is empty. Add products before calculating the bill."
+    }
+
     const cartFinal = [];
 
     let totalCost=0;
@@ -36,5 +40,6 @@ function calculateBill(){
         grandTotal: totalCost + totalGst
     };
 }
+console.log(calculateBill());
 
 module.exports = {calculateBill};
