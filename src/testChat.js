@@ -36,7 +36,7 @@ const rl = readline.createInterface({ input, output });
 // Describe the tool to Gemini.
 
 //productTools
-const searchProductsTools = {
+const searchProductsTool = {
   name: "searchProducts",
 
   description:
@@ -61,7 +61,7 @@ const searchProductsTools = {
   },
 };
 
-const getAllProductsTools = {
+const getAllProductsTool = {
   name: "getAllProducts",
 
   description:
@@ -74,7 +74,7 @@ const getAllProductsTools = {
   },
 };
 
-const getOneProductTools = {
+const getOneProductTool = {
   name: "getOneProduct",
 
   description:
@@ -93,7 +93,7 @@ const getOneProductTools = {
   },
 };
 
-const checkStockTools = {
+const checkStockTool = {
   name: "checkStock",
 
   description:
@@ -114,7 +114,7 @@ const checkStockTools = {
 
 
 //cartTools
-const addToCartTools = {
+const addToCartTool = {
   name: "addToCart",
 
   description: "Add a specified quantity of a product to the shopping cart using its product ID.",
@@ -138,7 +138,7 @@ const addToCartTools = {
   },
 };
 
-const getCartTools = {
+const getCartTool = {
   name: "getCart",
 
   description:
@@ -151,7 +151,7 @@ const getCartTools = {
   },
 };
 
-const removeFromCartTools = {
+const removeFromCartTool = {
   name: "removeFromCart",
 
   description:
@@ -172,7 +172,7 @@ const removeFromCartTools = {
 };
 
 //billingTools
-const calculateBillTools = {
+const calculateBillTool = {
   name: "calculateBill",
   description:
     "Calculate the current shopping cart bill, including item subtotals, GST, and grand total.",
@@ -204,45 +204,65 @@ async function main() {
       config: {
         tools: [
           {
-            functionDeclarations: [searchProductsTools, getAllProductsTools, getOneProductTools, checkStockTools, addToCartTools, getCartTools, removeFromCartTools, calculateBillTools]
+            functionDeclarations: [searchProductsTool, getAllProductsTool, getOneProductTool, checkStockTool, addToCartTool, getCartTool, removeFromCartTool, calculateBillTool]
           }
        ]
       }
     });
 
+    console.log("Function calls in this response:", response.functionCalls?.length ?? 0);//
+
     while(response.functionCalls?.length > 0){
 
       history.push(response.candidates[0].content);
 
-      let functionCall = response.functionCalls[0];
-      console.log("Tool arguments:", functionCall.args);
+      // let functionCall = response.functionCalls[0];
 
-      console.log("ShopMate is using a tool:", functionCall.name);
+      for(const functionCall of response.functionCalls){
+        console.log("Tool arguments:", functionCall.args);
 
-      const toolFunction = availableTools[functionCall.name];
+        console.log("ShopMate is using a tool:", functionCall.name);
 
-      if (!toolFunction) {
-        throw new Error(`Unknown tool requested: ${functionCall.name}`);
-      }
+        const toolFunction = availableTools[functionCall.name];
 
-      const result = toolFunction(functionCall.args);
+        let result;
 
-      if (functionCall.name === "addToCart" || functionCall.name === "removeFromCart" || functionCall.name === "getCart") {
-        console.log("Current cart:", getCart());
-      }
-
-      history.push({
-        role:"user",
-        parts:[{
-          functionResponse: {
-            name:functionCall.name,
-            id:functionCall.id,
-            response:{
-              result
-            }
+        if (!toolFunction) {
+          result = {
+            error: `Unknown tool requested: ${functionCall.name}`
           }
-        }]
-      });
+        } else{
+          try{
+            result = toolFunction(functionCall.args);
+          }
+          catch(error){
+            console.error("Tool execution failed:", error.message);
+            result = {
+              error: "The tool could not complete the request."
+            };
+          }          
+        }
+
+
+        if (functionCall.name === "addToCart" || functionCall.name === "removeFromCart" || functionCall.name === "getCart") {
+          console.log("Current cart:", getCart());
+        }
+
+        history.push({
+          role:"user",
+          parts:[{
+            functionResponse: {
+              name:functionCall.name,
+              id:functionCall.id,
+              response:{
+                result
+              }
+            }
+          }]
+        });
+
+      }
+      
 
       response = await ai.models.generateContent({
         model: "gemini-3.5-flash-lite",
@@ -250,7 +270,7 @@ async function main() {
         config: {
           tools: [
             {
-              functionDeclarations: [searchProductsTools, getAllProductsTools, getOneProductTools, checkStockTools, addToCartTools, getCartTools, removeFromCartTools, calculateBillTools]
+              functionDeclarations: [searchProductsTool, getAllProductsTool, getOneProductTool, checkStockTool, addToCartTool, getCartTool, removeFromCartTool, calculateBillTool]
             }
           ]
         }

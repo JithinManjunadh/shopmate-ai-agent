@@ -11,7 +11,7 @@ function addToCart(productId, quantity){
     productId = productId.trim();
 
     const product = products.find(product => product.id === productId);
-
+    // const product = products.findProduct(productId); //error testing try/catch
     if(!product){
         return "Product not found";
     }
