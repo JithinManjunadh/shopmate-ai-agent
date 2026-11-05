@@ -212,6 +212,10 @@ async function main() {
 
     console.log("Function calls in this response:", response.functionCalls?.length ?? 0);//
 
+    let totalToolCalls = 0;
+    const MAX_TOOL_CALLS = 7;
+    let limitReached = false;
+
     while(response.functionCalls?.length > 0){
 
       history.push(response.candidates[0].content);
@@ -219,32 +223,47 @@ async function main() {
       // let functionCall = response.functionCalls[0];
 
       for(const functionCall of response.functionCalls){
-        console.log("Tool arguments:", functionCall.args);
+        // console.log("Tool arguments:", functionCall.args);
 
-        console.log("ShopMate is using a tool:", functionCall.name);
+        // console.log("ShopMate is using a tool:", functionCall.name);
 
-        const toolFunction = availableTools[functionCall.name];
+        // const toolFunction = availableTools[functionCall.name];
 
         let result;
 
-        if (!toolFunction) {
+        if(totalToolCalls >= MAX_TOOL_CALLS){
+          limitReached = true;
+          
           result = {
-            error: `Unknown tool requested: ${functionCall.name}`
-          }
-        } else{
-          try{
-            result = toolFunction(functionCall.args);
-          }
-          catch(error){
-            console.error("Tool execution failed:", error.message);
+            error: "Tool call limit reached for this request."
+          };
+
+
+        } else {
+          totalToolCalls++;
+
+          console.log("ShopMate is using a tool:", functionCall.name);
+
+          const toolFunction = availableTools[functionCall.name];
+
+          if (!toolFunction) {
             result = {
-              error: "The tool could not complete the request."
-            };
-          }          
+              error: `Unknown tool requested: ${functionCall.name}`
+            }
+          } else{
+            try{
+              result = toolFunction(functionCall.args);
+            }
+            catch(error){
+              console.error("Tool execution failed:", error.message);
+              result = {
+                error: "The tool could not complete the request."
+              };
+            }          
+          }
         }
 
-
-        if (functionCall.name === "addToCart" || functionCall.name === "removeFromCart" || functionCall.name === "getCart") {
+        if (!limitReached && (functionCall.name === "addToCart" || functionCall.name === "removeFromCart" || functionCall.name === "getCart")) {
           console.log("Current cart:", getCart());
         }
 
@@ -261,6 +280,28 @@ async function main() {
           }]
         });
 
+      }
+
+      if(limitReached){
+        response = await ai.models.generateContent({
+          model: "gemini-3.5-flash-lite",
+          contents: [...history, 
+            {
+              role: "user",
+              parts: [{text: "The tool-call limit for this request has been reached. Do not call or request any more tools. Using only the information already available in the conversation, explain what you successfully completed, what remains incomplete, and why. Do not invent results or claim that an unexecuted operation was completed."
+
+              }]
+            }
+          ],
+          config: {
+            toolConfig: {
+              functionCallingConfig: {
+                mode: "NONE"
+              }
+            }
+          }
+        });
+        break;
       }
       
 
@@ -301,8 +342,3 @@ main().catch((error) => {
   console.error("ShopMate error:", error.message);
   rl.close();
 });
-
-// Add 2 Mechanical Keyboards to my cart.
-// Show my cart.
-// Remove the Mechanical Keyboard from my cart.
-// Show my cart.

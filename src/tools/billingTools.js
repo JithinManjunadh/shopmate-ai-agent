@@ -40,6 +40,6 @@ function calculateBill(){
         grandTotal: totalCost + totalGst
     };
 }
-console.log(calculateBill());
+// console.log(calculateBill());
 
 module.exports = {calculateBill};
