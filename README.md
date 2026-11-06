@@ -78,8 +78,8 @@ shopmate-ai-agent/
 │   │   ├── cartTools.js
 │   │   └── billingTools.js
 │   │
-│   ├── test-chat.js
-│   └── test-gemini.js
+│   ├── testChat.js
+│   └── testGemini.js
 │
 ├── .env
 ├── .gitignore
@@ -126,11 +126,11 @@ Contains the billing functionality:
 
 It retrieves the current cart, calculates item subtotals and GST, and returns the final bill.
 
-**`src/test-gemini.js`**
+**`src/testGemini.js`**
 
 Used to verify connectivity with the Gemini API.
 
-**`src/test-chat.js`**
+**`src/testChat.js`**
 
 The main application entry point. It handles:
 - Terminal interaction.
@@ -570,7 +570,7 @@ Replace the placeholder with your actual Gemini API key.
 ### 5. Run the Application
 
 ```bash
-node src/test-chat.js
+node src/testChat.js
 ```
 
 You can now interact with ShopMate directly through the terminal.
