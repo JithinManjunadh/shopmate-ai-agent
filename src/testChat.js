@@ -323,14 +323,27 @@ async function main() {
 
     const answer = response.text;
 
-    console.log("ShopMate:", answer);
+    if(typeof answer === "string" && answer.trim() !== ""){
+      console.log("ShopMate:", answer);
 
-    history.push({
-      role:"model",
-      parts:[{
-        text: answer
-      }]
-    });
+      history.push({
+        role:"model",
+        parts:[{
+          text: answer
+        }]
+      });
+    } else{
+      console.error("Gemini returned no text response.");
+      
+      const fallBackMessage = "ShopMate could not generate a response. Please try again.";
+
+      console.log("ShopMate:", fallbackMessage);
+
+      history.push({
+        role: "model",
+        parts: [{ text: fallbackMessage }]
+      });
+    }
 
     console.log("\nHistory length:", history.length);
   }
